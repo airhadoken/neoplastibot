@@ -81,57 +81,89 @@ while(asum(xparts) < 512) {
   xparts.push(Math.floor(Math.pow(Math.random() * 14, 2)) + 50);
 }
 
-var yparts = xparts.map(function() {
-  var yp = [];
-  while(asum(yp) < 512) {
-    yp.push(Math.floor(Math.pow(Math.random() * 14, 2)) + 50);
-  }
-  return yp;
-});
+// var yparts = xparts.map(function() {
+//   var yp = [];
+//   while(asum(yp) < 512) {
+//     yp.push(Math.floor(Math.pow(Math.random() * 14, 2)) + 50);
+//   }
+//   return yp;
+// });
+
+var yparts = [];
+while(asum(yparts) < 512) {
+  yparts.push(Math.floor(Math.pow(Math.random() * 14, 2)) + 50);
+}
+
 
 var fills = [];
-var count = Math.floor(Math.random() * yparts.reduce(function(a, yp) { return a + yp.length; }, 0) / 2) + 1;
-var fillcolors = ["rgb(255, 255, 0)", "rgb(255, 0, 0)", "rgb(0, 0, 255)"];
+xparts.forEach(function() {
+  fills.unshift([]);
+  yparts.forEach(function() {
+    fills[0].push("rgb(255, 255, 255)");
+  });
+});
+var count = Math.floor(
+  Math.random() * xparts.length * yparts.length * (1 - 1 / Math.E)
+) + 4;
+var fillcolors = ["rgb(255, 255, 0)", "rgb(255, 0, 0)", "rgb(0, 0, 255)", "left", "left", "left", "left", "top", "top", "top", "top"];
 var xp, yp, fill;
 while(count--) {
 
   xp = Math.floor(Math.random() * xparts.length);
-  yp = Math.floor(Math.random() * yparts[xp].length);
-  fill = fillcolors[Math.floor(Math.random() * fillcolors.length)];
+  yp = Math.floor(Math.random() * yparts.length);
+  fill = fillcolors[Math.floor(Math.random() * (xp * yp === 0 ? 3 : fillcolors.length))];
 
-  console.log(JSON.stringify([xp, yp, fill]));
-  fills.push([xp, yp, fill]);
+  fills[xp][yp] = fill;
 }
 
-context.fillStyle = "rgb(255,255,255)";
+context.fillStyle = "rgb(0,0,0)";
 context.fillRect(0, 0, 512, 512);
 
-xparts.reduce(function(offset, xp, i) {
-  drawVerticalLine(offset + xp, 0, 512);
+// xparts.reduce(function(offset, xp, i) {
+//   drawVerticalLine(offset + xp, 0, 512);
 
-  yparts[i].reduce(function(yoffset, yp, i) {
-    drawHorizontalLine(offset, yoffset + yp, xp);
-    return yoffset + yp;
-  }, 0);
+//   yparts[i].reduce(function(yoffset, yp, i) {
+//     drawHorizontalLine(offset, yoffset + yp, xp);
+//     return yoffset + yp;
+//   }, 0);
 
-  return offset + xp;
-}, 0);
-
-
-fills.forEach(function(fill) {
-  var xoff, yoff, w, h;
-
-  context.fillStyle = fill[2];
-  xoff = fill[0] && asum(xparts.slice(0, fill[0])) + 7;
-  yoff = fill[1] && asum(yparts[fill[0]].slice(0, fill[1])) + 7;
-  w = xparts[fill[0]] - (xoff ? 7 : 0);
-  h = yparts[fill[0]][fill[1]] - (yoff ? 7 : 0);
-  console.log("filling", xoff, yoff, w, h);
-
-  context.fillRect(xoff, yoff, w, h);
+//   return offset + xp;
+// }, 0);
+fills[0].forEach(function(fill, i) {
+  console.log(fills.map(function(f) { return f[i]; }).join(", "));
 });
 
-console.log(context.transform.toString())
+
+fills.forEach(function(xfills, i) {
+  xfills.forEach(function(xyfill, j) {
+    var xoff = asum(xparts.slice(0, i)), 
+        yoff = asum(yparts.slice(0, j)), 
+        w = xparts[i], 
+        h = yparts[j], ref_i = i, ref_j = j;
+
+    while(xyfill === "left" || xyfill === "top") {
+      if(xyfill === "left") {
+        xyfill = fills[ref_i -= 1][ref_j];
+        xoff -= xparts[ref_i];
+        w += xparts[ref_i];
+      }
+      if(xyfill === "top") {
+        xyfill = fills[ref_i][ref_j -= 1];
+        yoff -= yparts[ref_j];
+        h += yparts[ref_j];
+      }
+    }
+    context.fillStyle = xyfill;    
+
+    xoff += (ref_i ? 7 : 0);
+    yoff += (ref_j ? 7 : 0);
+    w -= (ref_i ? 7 : 0);
+    h -= (ref_j ? 7 : 0);
+
+    context.fillRect(xoff, yoff, w, h);
+  });
+});
+
 writePng(canvas);
 
 // Step 5: 
