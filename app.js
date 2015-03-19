@@ -52,18 +52,23 @@ function drawHorizontalLine(xstart, yoffset, length) {
 
 
 var writePng = function(canvas, fname){
-    var fs, out, stream;
-    fs = require('fs');
-    fname = fname || __dirname + '/images/randrian.' + new Date().toISOString() + '.png';
-    out = fs.createWriteStream(fname);
-    stream = canvas.pngStream();
-    stream.on('data', function(it){
-      return out.write(it);
-    });
-    return stream.on('end', function(){
-      return console.log('saved png to ' + fname);
-    });
-  };
+  var fs, child_process, out, stream;
+  fs = require('fs');
+  child_process = require("child_process");
+  fname = fname || __dirname + '/images/randrian.' + new Date().toISOString() + '.png';
+  out = fs.createWriteStream(fname);
+  stream = canvas.pngStream();
+  stream.on('data', function(it){
+    return out.write(it);
+  });
+  return stream.on('end', function(){
+    console.log('saved png to ' + fname);
+
+    if(process.argv[2] === "-open") {
+      child_process.exec("open " + fname);
+    }
+  });
+};
 
 function asum(arr) {
 	return arr.reduce(function(a, b) {
