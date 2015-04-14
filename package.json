@@ -1,0 +1,17 @@
+{
+  "name": "neoplastibot",
+  "main": "app.js",
+  "scripts": {
+    "start": "app.js"
+  },
+  "version": "1.0",
+  "engines": {
+    "node": "0.10.x"
+  },
+  "dependencies": {
+    "canvas": "*",
+    "fs": "*",
+    "twit": "*",
+    "express": "*",
+  }
+}
