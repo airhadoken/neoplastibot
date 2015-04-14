@@ -12,11 +12,15 @@
 // Step 4: draw random shapes in this style on the canvas.
 var Canvas = require("canvas");
 
+var fs = require('fs');
 var canvas = new Canvas(512, 512);
 var context = canvas.getContext("2d");
 var config = require("./config.json");
+var stats = require("./stats.json");
+var Twit = require("twit");
+var express = require("express");
+var app = express();
 
-var API_KEY = config.API_KEY;
 var consumer_key = config.consumer_key;
 var consumer_secret = config.consumer_secret;
 var access_token = config.access_token; 
@@ -60,8 +64,7 @@ function drawHorizontalLine(xstart, yoffset, length) {
 
 
 var writePng = function(canvas, fname){
-  var fs, child_process, out, stream;
-  fs = require('fs');
+  var child_process, out, stream;
   child_process = require("child_process");
   fname = fname || __dirname + '/images/randrian.' + new Date().toISOString() + '.png';
   out = fs.createWriteStream(fname);
@@ -203,9 +206,6 @@ function createCanvas() {
   context.fillStyle = "rgb(0,0,0)";
   context.fillRect(0, 0, 512, 512);
 
-  // fills[0].forEach(function(fill, i) {
-  //   console.log(fills.map(function(f) { return (f[i].fill || "-----------------") + f[i].w + f[i].h; }).join("\t"));
-  // });
   var colorsused = {};
   fills.forEach(function(xfills, i) {
     xfills.forEach(function(xyfill, j) {
@@ -236,21 +236,30 @@ function createCanvas() {
     });
   });
 
-  title = "Composition in ";
-  colorsused = Object.keys(colorsused);
+  function capitalize(str) {
+    return str[0].toUpperCase() + str.slice(1);
+  }
+
+  title = "";
+  colorsused = Object.keys(colorsused).sort();
   switch(colorsused.length) {
     case 0:
-    title += "white";
+    title += "White";
     break;
     case 1:
-    title += colorsused[0];
+    title += capitalize(colorsused[0]);
     break;
     case 2:
-    title += colorsused[0] + " and " + colorsused[1];
+    title += capitalize(colorsused[0]) + " and " + capitalize(colorsused[1]);
     break;
     default:
-    title += "red, blue, and yellow";
+    title += "Red, Blue, and Yellow";
   }
+  stats[title] = stats[title] || 0;
+  stats[title]++;
+  title = "Composition " + stats[title] + " in " + title;
+  fs.writeFileSync("stats.json", JSON.stringify(stats));
+
   return canvas;
 }
 
@@ -278,23 +287,25 @@ if(!~process.argv.indexOf("-debug")) {
     access_token_secret: access_token_secret
   });
 
-  var stream = canvas.pngStream();
-  var b64Content = "";
-  stream.on("data", function(buffer) {
-    b64content += buffer.toString('base64');
-  });
+  // first we must post the media to Twitter
+  T.post('media/upload', { "media": createCanvas().toBuffer().toString('base64') }, function (err, data, response) {
 
-  stream.on("end", function() {
-    // first we must post the media to Twitter
-    T.post('media/upload', { media: b64content }, function (err, data, response) {
+    if(err) {
+      console.error(err);
+      if(~process.argv.indexOf("-once")) {
+        process.exit(0);
+      }
+    }
 
-      // now we can reference the media and post a tweet (media will attach to the tweet)
-      var mediaIdStr = data.media_id_string;
-      var params = { status: title, media_ids: [mediaIdStr] };
+    // now we can reference the media and post a tweet (media will attach to the tweet)
+    var mediaIdStr = data.media_id_string;
+    var params = { status: title, media_ids: [mediaIdStr] };
 
-      T.post('statuses/update', params, function (err, data, response) {
-        console.log(data);
-      });
+    T.post('statuses/update', params, function (err, data, response) {
+      console.log(data);
+      if(~process.argv.indexOf("-once")) {
+        process.exit(0);
+      }
     });
   });
 
