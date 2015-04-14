@@ -14,8 +14,17 @@ var Canvas = require("canvas");
 
 var canvas = new Canvas(512, 512);
 var context = canvas.getContext("2d");
+var config = require("./config.json");
+
+var API_KEY = config.API_KEY;
+var consumer_key = config.consumer_key;
+var consumer_secret = config.consumer_secret;
+var access_token = config.access_token; 
+var access_token_secret = config.access_token_secret;
+
 
 var boogie = false; //Math.random() < 0.5;
+var title;
 function drawVerticalLine(xoffset, ystart, length) {
   var counter = 0;
   if(boogie) {
@@ -63,7 +72,7 @@ var writePng = function(canvas, fname){
   return stream.on('end', function(){
     console.log('saved png to ' + fname);
 
-    if(process.argv[2] === "-open") {
+    if(~process.argv.indexOf("-open")) {
       child_process.exec("open " + fname);
     }
   });
@@ -226,9 +235,73 @@ function createCanvas() {
       context.fillRect(xoff, yoff, w, h);
     });
   });
+
+  title = "Composition in ";
+  colorsused = Object.keys(colorsused);
+  switch(colorsused.length) {
+    case 0:
+    title += "white";
+    break;
+    case 1:
+    title += colorsused[0];
+    break;
+    case 2:
+    title += colorsused[0] + " and " + colorsused[1];
+    break;
+    default:
+    title += "red, blue, and yellow";
+  }
   return canvas;
 }
 
-writePng(createCanvas());
+
+// If deployed to Nodejitsu, it requires an application to respond to HTTP requests
+// If you're running locally or on Openshift you don't need this, or express at all.
+if(!~process.argv.indexOf("-debug")) {
+  app.get('/', function(req, res){
+      res.send("<h1>Recent retweets</h1>" + ((recent_retweets && recent_retweets.length) ? recent_retweets.join("<br>\n") : "No retweets"));
+  });
+  try {
+    app.listen(
+      process.env.OPENSHIFT_NODEJS_PORT || process.env.OPENSHIFT_INTERNAL_PORT || 8080,
+      process.env.OPENSHIFT_NODEJS_IP ||
+                           process.env.OPENSHIFT_INTERNAL_IP);
+  } catch(e) {
+    console.error(e);
+    //continue app. just forget about serving web
+  }
+  // insert your twitter app info here
+  var T = new Twit({
+    consumer_key:     consumer_key, 
+    consumer_secret:  consumer_secret,
+    access_token:     access_token,
+    access_token_secret: access_token_secret
+  });
+
+  var stream = canvas.pngStream();
+  var b64Content = "";
+  stream.on("data", function(buffer) {
+    b64content += buffer.toString('base64');
+  });
+
+  stream.on("end", function() {
+    // first we must post the media to Twitter
+    T.post('media/upload', { media: b64content }, function (err, data, response) {
+
+      // now we can reference the media and post a tweet (media will attach to the tweet)
+      var mediaIdStr = data.media_id_string;
+      var params = { status: title, media_ids: [mediaIdStr] };
+
+      T.post('statuses/update', params, function (err, data, response) {
+        console.log(data);
+      });
+    });
+  });
+
+} else {  
+  writePng(createCanvas());
+  console.log(title);
+}
+
 
 // Step 5: 
