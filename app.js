@@ -1,7 +1,6 @@
 
 "use strict";
 
-
 // What shall we do to create art?
 
 // Step 1: Create a random name from a set of firsts and lasts:
@@ -76,94 +75,160 @@ function asum(arr) {
 	}, 0)
 }
 
-var xparts = [];
-while(asum(xparts) < 512) {
-  xparts.push(Math.floor(Math.pow(Math.random() * 14, 2)) + 50);
-}
+function createCanvas() {
+  var xparts = [];
+  while(asum(xparts) < 512) {
+    xparts.push(Math.floor(Math.pow(Math.random() * 12, 2)) + 50);
+  }
+  var yparts = [];
+  while(asum(yparts) < 512) {
+    yparts.push(Math.floor(Math.pow(Math.random() * 12, 2)) + 50);
+  }
 
-// var yparts = xparts.map(function() {
-//   var yp = [];
-//   while(asum(yp) < 512) {
-//     yp.push(Math.floor(Math.pow(Math.random() * 14, 2)) + 50);
-//   }
-//   return yp;
-// });
-
-var yparts = [];
-while(asum(yparts) < 512) {
-  yparts.push(Math.floor(Math.pow(Math.random() * 14, 2)) + 50);
-}
-
-
-var fills = [];
-xparts.forEach(function() {
-  fills.unshift([]);
-  yparts.forEach(function() {
-    fills[0].push("rgb(255, 255, 255)");
+  var fills = [];
+  xparts.forEach(function(xp, x) {
+    fills.unshift([]);
+    yparts.forEach(function(yp, y) {
+      fills[0].push({
+        fill: "white",
+        w: 1,
+        h: 1, 
+        wmax: fills.length - (x === xparts.length - 1 ? 1 : 0), //x direction being done in reverse
+        hmax: yparts.length - (y === 0 ? 1 : y) 
+      });
+    });
   });
-});
-var count = Math.floor(
-  Math.random() * xparts.length * yparts.length * (1 - 1 / Math.E)
-) + 4;
-var fillcolors = ["rgb(255, 255, 0)", "rgb(255, 0, 0)", "rgb(0, 0, 255)", "left", "left", "left", "left", "top", "top", "top", "top"];
-var xp, yp, fill;
-while(count--) {
 
-  xp = Math.floor(Math.random() * xparts.length);
-  yp = Math.floor(Math.random() * yparts.length);
-  fill = fillcolors[Math.floor(Math.random() * (xp * yp === 0 ? 3 : fillcolors.length))];
+  var count = Math.floor(
+    Math.random() * (xparts.length + yparts.length)
+  ) + 4;
+  var fillcolors = ["yellow", "red", "blue"];
+  var xp, yp, fill;
+  while(count--) {
 
-  fills[xp][yp] = fill;
-}
+    xp = Math.floor(Math.random() * xparts.length);
+    yp = Math.floor(Math.random() * yparts.length);
+    fill = fillcolors[Math.floor(Math.random() * (xp * yp === 0 ? 3 : fillcolors.length))];
 
-context.fillStyle = "rgb(0,0,0)";
-context.fillRect(0, 0, 512, 512);
+    fills[xp][yp].fill = fill;
+  }
 
-// xparts.reduce(function(offset, xp, i) {
-//   drawVerticalLine(offset + xp, 0, 512);
+  var p, xd, yd, sanity;
+  xp = 0;
+  yp = 0;
+  count = Math.floor(
+    Math.random() * xparts.length * yparts.length * (1 - 1 / Math.E)
+  ) + 10;
+  while(count--) {
 
-//   yparts[i].reduce(function(yoffset, yp, i) {
-//     drawHorizontalLine(offset, yoffset + yp, xp);
-//     return yoffset + yp;
-//   }, 0);
+    p = Math.floor(Math.random() * xparts.length * yparts.length) + 1;
+    sanity = xparts.length * yparts.length;
+    xd = 0;
+    yd = 0;
 
-//   return offset + xp;
-// }, 0);
-fills[0].forEach(function(fill, i) {
-  console.log(fills.map(function(f) { return f[i]; }).join(", "));
-});
-
-
-fills.forEach(function(xfills, i) {
-  xfills.forEach(function(xyfill, j) {
-    var xoff = asum(xparts.slice(0, i)), 
-        yoff = asum(yparts.slice(0, j)), 
-        w = xparts[i], 
-        h = yparts[j], ref_i = i, ref_j = j;
-
-    while(xyfill === "left" || xyfill === "top") {
-      if(xyfill === "left") {
-        xyfill = fills[ref_i -= 1][ref_j];
-        xoff -= xparts[ref_i];
-        w += xparts[ref_i];
+    // choose a random start point.
+    while(p-- && sanity) {
+      xp++;
+      if(xp >= xparts.length) {
+        xp = 0;
+        yp = (yp + 1) % yparts.length;
       }
-      if(xyfill === "top") {
-        xyfill = fills[ref_i][ref_j -= 1];
-        yoff -= yparts[ref_j];
-        h += yparts[ref_j];
+      if(p < 1
+         && (fills[xp][yp].fill == null
+             || fills[xp][yp].w > 1
+             || fills[xp][yp].h > 1
+             || (fills[xp][yp].wmax < 2 && fills[xp][yp].hmax < 2)
+             )) {
+        ++p; // large rectangle found. Maybe don't count this iteration.  
+        // But also don't let it loop forever if we run out of blocks to play with.
+        --sanity;
       }
     }
-    context.fillStyle = xyfill;    
 
-    xoff += (ref_i ? 7 : 0);
-    yoff += (ref_j ? 7 : 0);
-    w -= (ref_i ? 7 : 0);
-    h -= (ref_j ? 7 : 0);
+    // If sanity is 0, The Elder Ones got to this iteration.
+    // (tried too many times to pass through large blocks. This could mean the whole grid is now large blocks,
+    //  and that's OK, but then it's hard to find more).
+    if(sanity > 0) {
+      do {
+        xd = Math.floor(Math.pow(Math.random(), 3) * fills[xp][yp].wmax + 1);
+        yd = Math.floor(Math.pow(Math.random(), 3) * fills[xp][yp].hmax + 1);
+      } while(xd < 2 && yd < 2); // Recalculate if we didn't grow the rectangle.
 
-    context.fillRect(xoff, yoff, w, h);
+      // null out the following stuff in the blocks; adjust max width/height to preceding blocks
+      (function() {
+        var i, j, k;
+        // first pass: check for wmax/ymax differences in rows and columns if block is 2x2 or greater.
+        for(i = xp + 1; i < xp + xd; i++) {
+          for(j = yp + 1; j < yp + yd; j++) {
+            if(fills[i][j].fill == null || fills[i][j].w > 1 || fills[i][j].h > 1) {
+              //special case -- another row/column in our block has a lesser wmax/hmax than our origin
+              if(xd > yd) {
+                xd = i - xp;
+              } else {
+                yd = j - yp;
+              }
+            }
+          }
+        }
+
+        for(i = 0; i < xp + xd; i++) {
+          for(j = 0; j < yp + yd; j++) {
+            if(i >= xp && j >= yp) {
+              if(i > xp || j > yp) { // don't null the upper left corner
+                fills[i][j].fill = null;
+              }
+            } else if(i >= xp) { // vertically above the new block
+              fills[i][j].hmax = Math.min(yp - j, fills[i][j].hmax);
+            } else if(j >= yp) { // horizontally left of the new block
+              fills[i][j].wmax = Math.min(xp - i, fills[i][j].wmax);
+            }
+          }
+        }
+      })();
+      fills[xp][yp].w = xd;
+      fills[xp][yp].h = yd;
+    }
+
+  }
+
+  context.fillStyle = "rgb(0,0,0)";
+  context.fillRect(0, 0, 512, 512);
+
+  // fills[0].forEach(function(fill, i) {
+  //   console.log(fills.map(function(f) { return (f[i].fill || "-----------------") + f[i].w + f[i].h; }).join("\t"));
+  // });
+  var colorsused = {};
+  fills.forEach(function(xfills, i) {
+    xfills.forEach(function(xyfill, j) {
+      var xoff = asum(xparts.slice(0, i)), 
+          yoff = asum(yparts.slice(0, j)), 
+          w = xparts[i], 
+          h = yparts[j], ref_i = i, ref_j = j;
+
+      if(!xyfill.fill)
+        return;
+
+      context.fillStyle = xyfill.fill;   
+      colorsused[xyfill.fill] = true;
+
+      while(++ref_i < i + xyfill.w) {
+        w += xparts[ref_i];
+      }
+      while(++ref_j < j + xyfill.h) {
+        h += yparts[ref_j];
+      }
+
+      xoff += (i ? 7 : 0);
+      yoff += (j ? 7 : 0);
+      w -= (i ? 7 : 0);
+      h -= (j ? 7 : 0);
+
+      context.fillRect(xoff, yoff, w, h);
+    });
   });
-});
+  return canvas;
+}
 
-writePng(canvas);
+writePng(createCanvas());
 
 // Step 5: 
