@@ -287,27 +287,33 @@ if(!~process.argv.indexOf("-debug")) {
     access_token_secret: access_token_secret
   });
 
-  // first we must post the media to Twitter
-  T.post('media/upload', { "media": createCanvas().toBuffer().toString('base64') }, function (err, data, response) {
+  function makeTweet(){  // first we must post the media to Twitter
+    T.post('media/upload', { "media": createCanvas().toBuffer().toString('base64') }, function (err, data, response) {
 
-    if(err) {
-      console.error(err);
-      if(~process.argv.indexOf("-once")) {
-        process.exit(0);
+      if(err) {
+        console.error(err);
+        if(~process.argv.indexOf("-once")) {
+          process.exit(0);
+        }
       }
-    }
 
-    // now we can reference the media and post a tweet (media will attach to the tweet)
-    var mediaIdStr = data.media_id_string;
-    var params = { status: title, media_ids: [mediaIdStr] };
+      // now we can reference the media and post a tweet (media will attach to the tweet)
+      var mediaIdStr = data.media_id_string;
+      var params = { status: title, media_ids: [mediaIdStr] };
 
-    T.post('statuses/update', params, function (err, data, response) {
-      console.log(data);
-      if(~process.argv.indexOf("-once")) {
-        process.exit(0);
-      }
+      T.post('statuses/update', params, function (err, data, response) {
+        console.log(data);
+        if(~process.argv.indexOf("-once")) {
+          process.exit(0);
+        }
+      });
     });
-  });
+  }
+
+  makeTweet();
+  if(!~process.argv.indexOf("-once")) {
+    setInterval(makeTweet, config.interval || 86400000);
+  }
 
 } else {  
   writePng(createCanvas());
