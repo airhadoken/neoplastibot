@@ -12,6 +12,6 @@
     "canvas": "*",
     "fs": "*",
     "twit": "*",
-    "express": "*",
+    "express": "*"
   }
 }
