@@ -15,8 +15,8 @@ var canvas = new Canvas(512, 512);
 var context = canvas.getContext("2d");
 var config = require("./config.json");
 var Twit = require("twit");
-var express = require("express");
-var app = express();
+// var express = require("express");
+// var app = express();
 
 var consumer_key = config.consumer_key;
 var consumer_secret = config.consumer_secret;
@@ -264,20 +264,20 @@ function createCanvas() {
 // If deployed to Nodejitsu, it requires an application to respond to HTTP requests
 // If you're running locally or on Openshift you don't need this, or express at all.
 if(!~process.argv.indexOf("-debug")) {
-  app.get('/', function(req, res){
-    canvas.toDataURL('image/png', function(err, str){
-      res.send(
-        '<h1><a href="https://twitter.com/neoplastibot">@neoplastibot</a></h1>'
-        + '<h2>last image: "' + title + '"</h2><img src="' + str + '">'
-      );
-    });
-  });
-  try {
-    app.listen(process.env.PORT || 8080);
-  } catch(e) {
-    console.error(e);
-    //continue app. just forget about serving web
-  }
+  // app.get('/', function(req, res){
+  //   canvas.toDataURL('image/png', function(err, str){
+  //     res.send(
+  //       '<h1><a href="https://twitter.com/neoplastibot">@neoplastibot</a></h1>'
+  //       + '<h2>last image: "' + title + '"</h2><img src="' + str + '">'
+  //     );
+  //   });
+  // });
+  // try {
+  //   app.listen(process.env.PORT || 8080);
+  // } catch(e) {
+  //   console.error(e);
+  //   //continue app. just forget about serving web
+  // }
   // insert your twitter app info here
   var T = new Twit({
     consumer_key:     consumer_key, 
@@ -313,6 +313,10 @@ if(!~process.argv.indexOf("-debug")) {
   createCanvas();
   if(!~process.argv.indexOf("-once")) {
     setInterval(makeTweet, config.interval || 86400000);
+
+    //here we just ensure that the app doesn't sleep by pinging it every five minutes.
+    //  If we didn't keep the app alive, it wouldn't wake up to run the interval function
+    //  at the appropriate interval.
   }
 
 } else {  
