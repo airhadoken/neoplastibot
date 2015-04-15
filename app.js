@@ -266,7 +266,7 @@ function createCanvas() {
 // If you're running locally or on Openshift you don't need this, or express at all.
 if(!~process.argv.indexOf("-debug")) {
   app.get('/', function(req, res){
-      res.send("<h1>Recent retweets</h1>" + ((recent_retweets && recent_retweets.length) ? recent_retweets.join("<br>\n") : "No retweets"));
+      res.send("<h1>Stats</h1>" + JSON.stringify(stats));
   });
   try {
     app.listen(
