@@ -215,8 +215,11 @@ function createCanvas() {
       if(!xyfill.fill)
         return;
 
-      context.fillStyle = xyfill.fill;   
-      colorsused[xyfill.fill] = true;
+      context.fillStyle = xyfill.fill;
+      if(xoff < 505 && yoff < 505) {
+        // can't see these.        
+        colorsused[xyfill.fill] = true;
+      }
 
       while(++ref_i < i + xyfill.w) {
         w += xparts[ref_i];
@@ -239,6 +242,7 @@ function createCanvas() {
   }
 
   title = "";
+  delete colorsused["white"];
   colorsused = Object.keys(colorsused).sort();
   switch(colorsused.length) {
     case 0:
