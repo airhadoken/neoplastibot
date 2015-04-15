@@ -293,6 +293,8 @@ if(!~process.argv.indexOf("-debug")) {
         console.error(err);
         if(~process.argv.indexOf("-once")) {
           process.exit(0);
+        } else {
+          throw err;
         }
       }
 
