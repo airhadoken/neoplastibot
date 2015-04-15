@@ -269,10 +269,7 @@ if(!~process.argv.indexOf("-debug")) {
       res.send("<h1>Stats</h1>" + JSON.stringify(stats));
   });
   try {
-    app.listen(
-      process.env.OPENSHIFT_NODEJS_PORT || process.env.OPENSHIFT_INTERNAL_PORT || 8080,
-      process.env.OPENSHIFT_NODEJS_IP ||
-                           process.env.OPENSHIFT_INTERNAL_IP);
+    app.listen(process.env.PORT || 8080);
   } catch(e) {
     console.error(e);
     //continue app. just forget about serving web
