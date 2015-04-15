@@ -309,8 +309,7 @@ if(!~process.argv.indexOf("-debug")) {
     });
   }
 
-  //makeTweet();
-  createCanvas();
+  makeTweet();
   if(!~process.argv.indexOf("-once")) {
     setInterval(makeTweet, config.interval || 86400000);
 
