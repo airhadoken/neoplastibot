@@ -14,7 +14,6 @@ var fs = require('fs');
 var canvas = new Canvas(512, 512);
 var context = canvas.getContext("2d");
 var config = require("./config.json");
-var stats = require("./stats.json");
 var Twit = require("twit");
 var express = require("express");
 var app = express();
@@ -241,7 +240,7 @@ function createCanvas() {
     return str[0].toUpperCase() + str.slice(1);
   }
 
-  title = "";
+  title = "Composition in ";
   delete colorsused["white"];
   colorsused = Object.keys(colorsused).sort();
   switch(colorsused.length) {
@@ -257,10 +256,6 @@ function createCanvas() {
     default:
     title += "Red, Blue, and Yellow";
   }
-  stats[title] = stats[title] || 0;
-  stats[title]++;
-  title = "Composition " + stats[title] + " in " + title;
-  fs.writeFileSync("stats.json", JSON.stringify(stats));
 
   return canvas;
 }
@@ -270,7 +265,12 @@ function createCanvas() {
 // If you're running locally or on Openshift you don't need this, or express at all.
 if(!~process.argv.indexOf("-debug")) {
   app.get('/', function(req, res){
-      res.send("<h1>Stats</h1>" + JSON.stringify(stats));
+    canvas.toDataURL('image/png', function(err, str){
+      res.send(
+        '<h1><a href="https://twitter.com/neoplastibot">@neoplastibot</a></h1>'
+        + '<h2>last image: "' + title + '"</h2><img src="' + str + '">'
+      );
+    });
   });
   try {
     app.listen(process.env.PORT || 8080);
