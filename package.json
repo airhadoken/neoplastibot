@@ -1,6 +1,9 @@
 {
   "name": "neoplastibot",
   "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
   "version": "1.0.3",
   "engines": {
     "node": "0.10.x"

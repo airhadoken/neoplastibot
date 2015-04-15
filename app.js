@@ -1,6 +1,4 @@
 
-"use strict";
-
 // What shall we do to create art?
 
 // Step 1: Create a random name from a set of firsts and lasts:
