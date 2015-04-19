@@ -4,14 +4,15 @@
   "scripts": {
     "start": "node app.js"
   },
-  "version": "1.0.4",
+  "version": "1.1.0",
   "engines": {
     "node": "0.10.x"
   },
   "dependencies": {
     "canvas": "*",
+    "express": "*",
     "fs": "*",
-    "twit": "*",
-    "express": "*"
+    "mongodb": "^2.0.27",
+    "twit": "*"
   }
 }

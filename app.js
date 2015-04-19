@@ -15,9 +15,11 @@ var canvas = new Canvas(512, 512);
 var context = canvas.getContext("2d");
 var config = require("./config.json");
 var Twit = require("twit");
-// var express = require("express");
-// var app = express();
 
+var stats;
+var MongoClient = require('mongodb').MongoClient;
+
+var mongourl = config.mongodb_url;
 var consumer_key = config.consumer_key;
 var consumer_secret = config.consumer_secret;
 var access_token = config.access_token; 
@@ -79,9 +81,9 @@ var writePng = function(canvas, fname){
 };
 
 function asum(arr) {
-	return arr.reduce(function(a, b) {
-		return a + b;
-	}, 0)
+  return arr.reduce(function(a, b) {
+    return a + b;
+  }, 0)
 }
 
 function createCanvas() {
@@ -240,23 +242,40 @@ function createCanvas() {
     return str[0].toUpperCase() + str.slice(1);
   }
 
-  title = "Composition in ";
   delete colorsused["white"];
   colorsused = Object.keys(colorsused).sort();
   switch(colorsused.length) {
     case 0:
-    title += "White";
+    title = "White";
     break;
     case 1:
-    title += capitalize(colorsused[0]);
+    title = capitalize(colorsused[0]);
     break;
     case 2:
-    title += capitalize(colorsused[0]) + " and " + capitalize(colorsused[1]);
+    title = capitalize(colorsused[0]) + " and " + capitalize(colorsused[1]);
     break;
     default:
-    title += "Red, Blue, and Yellow";
+    title = "Red, Blue, and Yellow";
   }
 
+  if(stats) {
+    stats[title] = stats[title] || 0;
+    stats[title]++;
+    title = "Composition " + stats[title] + " in " + title;
+  } else {
+    title = "Composition in " + title;
+  }
+
+  if(mongourl) {  
+    MongoClient.connect(mongourl, function(err, db) {
+      if(err) {
+        console.error(err);
+      } else {
+        var collection = db.collection(config.mongodb_collection);
+        collection.update({"_id": stats._id}, stats);
+      }
+    });
+  }
   return canvas;
 }
 
@@ -264,20 +283,25 @@ function createCanvas() {
 // If deployed to Nodejitsu, it requires an application to respond to HTTP requests
 // If you're running locally or on Openshift you don't need this, or express at all.
 if(!~process.argv.indexOf("-debug")) {
-  // app.get('/', function(req, res){
-  //   canvas.toDataURL('image/png', function(err, str){
-  //     res.send(
-  //       '<h1><a href="https://twitter.com/neoplastibot">@neoplastibot</a></h1>'
-  //       + '<h2>last image: "' + title + '"</h2><img src="' + str + '">'
-  //     );
-  //   });
-  // });
-  // try {
-  //   app.listen(process.env.PORT || 8080);
-  // } catch(e) {
-  //   console.error(e);
-  //   //continue app. just forget about serving web
-  // }
+  if(~process.argv.indexOf("-server")) {
+    var express = require("express");
+    var app = express();
+
+    app.get('/', function(req, res){
+      canvas.toDataURL('image/png', function(err, str){
+        res.send(
+          '<h1><a href="https://twitter.com/neoplastibot">@neoplastibot</a></h1>'
+          + '<h2>last image: "' + title + '"</h2><img src="' + str + '">'
+        );
+      });
+    });
+    try {
+      app.listen(process.env.PORT || 8080);
+    } catch(e) {
+      console.error(e);
+      //continue app. just forget about serving web
+    }
+  }
   // insert your twitter app info here
   var T = new Twit({
     consumer_key:     consumer_key, 
@@ -311,13 +335,46 @@ if(!~process.argv.indexOf("-debug")) {
     });
   }
 
-  makeTweet();
-  if(!~process.argv.indexOf("-once")) {
-    setInterval(makeTweet, config.interval || 86400000);
+  function startService() {
+    if(~process.argv.indexOf("-dry-run")) {
+      createCanvas();
+    } else {
+      makeTweet();
+    }
+    if(!~process.argv.indexOf("-once")) {
+      setInterval(~process.argv.indexOf("-dry-run") ? createCanvas : makeTweet, config.interval || 86400000);
 
-    //here we just ensure that the app doesn't sleep by pinging it every five minutes.
-    //  If we didn't keep the app alive, it wouldn't wake up to run the interval function
-    //  at the appropriate interval.
+      //here we just ensure that the app doesn't sleep by pinging it every five minutes.
+      //  If we didn't keep the app alive, it wouldn't wake up to run the interval function
+      //  at the appropriate interval.
+      var http = require("http");
+      setInterval(function() {
+        http.get({ hostname: "localhost", port: process.env.PORT || 8080 });
+      }, 300000);
+    }    
+  }
+
+  if(mongourl) {
+    MongoClient.connect(mongourl, function(err, db) {
+      if(err) {
+        console.error(err);
+        startService();
+      }
+
+      var collection = db.collection(config.mongodb_collection);
+      collection.findOne({}, function(err, s) { 
+        if(err) {
+          console.error(err);
+        } else {
+          stats = s;
+        }
+        db.close();
+        startService();
+      });
+    });
+  } else {
+    //with no stats repo configured, continue without attempting to retrieve stats object.
+    startService();
   }
 
 } else {  
