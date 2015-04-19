@@ -13,6 +13,14 @@
     "access_token": "",
     "access_token_secret": "",
 
+    "MONGODB_NOTES": "Post here the url with username and password as required to connect to your stats database",
+    "MONGODB_NOTES": "The collection deals with only one object, and it will only retrieve the first object in ",
+    "MONGODB_NOTES": " the collection.  If mongodb_url is left empty, the app will not attempt to retrieve stats",
+    "MONGODB_NOTES": " and all pieces will be titled 'Composition in...' without a serial number.",
+
+    "mongodb_url": "",
+    "mongodb_collection": "stats",
+
     "INTERVAL_NOTES": "If you'd like to change the frequency of posting from the default 24 hours (86400000ms), ",
     "INTERVAL_NOTES": " set it with the interval key here.  Note that 120000(ms) is the minimum that will be accepted",
     "INTERVAL_NOTES": " by the Twitter API.",
