@@ -8,6 +8,7 @@ This bot creates a 512x512 image in the style of Mondrian paintings (orthogonal 
 * Node-Canvas
 * Express
 * Twit
+* MongoDB-node
 
 ## Usage
 
@@ -20,6 +21,9 @@ Flags:
 * `-debug` Instead of tweeting the image, create an image file and save it in images/, then exit (implies `-once`)
 * `-open` Used with `-debug`; open the image file immediately after creating.
 
+## Configuration
+
+See [config.json](blob/master/config.json) for instructions for setting up Twitter API keys and the MongoDB url to save statistics about what has been created.
 
 ## License
 
