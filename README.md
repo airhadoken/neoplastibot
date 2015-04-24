@@ -23,7 +23,7 @@ Flags:
 
 ## Configuration
 
-See [config.json](blob/master/config.json) for instructions for setting up Twitter API keys and the MongoDB url to save statistics about what has been created.
+See [config.json](./config.json) for instructions for setting up Twitter API keys and the MongoDB url to save statistics about what has been created.
 
 ## License
 
