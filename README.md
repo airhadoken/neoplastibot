@@ -1,4 +1,4 @@
-# Neoplsticism Bot
+# Neoplasticism Bot
 
 This bot creates a 512x512 image in the style of Mondrian paintings (orthogonal black lines and primary color rectangles on a white field).  An live example of this can be found at [@neoplastibot on Twitter](https://twitter.com/neoplastibot)
 
